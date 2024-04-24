@@ -36,6 +36,8 @@ class LoginActivity : BaseActivity() {
     private val loginClient = LoginClient()
     private val loginCallback = LoginCallback()
     private var shouldLogLogin = true
+    private val isAutomatedLogin: Boolean
+        get() = intent.getBooleanExtra(LOGIN_AUTH_APPETIZE, false)
 
     private val createAccountLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         logLoginStart()
@@ -81,7 +83,7 @@ class LoginActivity : BaseActivity() {
 
         // always go to account creation before logging in, unless we arrived here through the
         // system account creation workflow
-        if (savedInstanceState == null && !intent.hasExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)) {
+        if (savedInstanceState == null && !intent.hasExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE) && !isAutomatedLogin) {
             startCreateAccountActivity()
         }
 
@@ -89,6 +91,8 @@ class LoginActivity : BaseActivity() {
 
         // Assume no login by default
         setResult(RESULT_LOGIN_FAIL)
+
+        automateLoginIfRequired()
     }
 
     override fun onBackPressed() {
@@ -223,9 +227,26 @@ class LoginActivity : BaseActivity() {
         binding.viewLoginError.visibility = View.VISIBLE
     }
 
+    private fun automateLoginIfRequired() {
+        // Check if we have a payload to automate the login flow
+        if (isAutomatedLogin) {
+            val username = intent.getStringExtra(LOGIN_AUTH_APPETIZE_USERNAME)
+            val password = intent.getStringExtra(LOGIN_AUTH_APPETIZE_PASSWORD)
+            // The required values are username and password
+            if (username != null && password != null) {
+                binding.loginUsernameText.editText?.setText(username)
+                binding.loginPasswordInput.editText?.setText(password)
+                doLogin()
+            }
+        }
+    }
+
     companion object {
         const val RESULT_LOGIN_SUCCESS = 1
         const val RESULT_LOGIN_FAIL = 2
+        private const val LOGIN_AUTH_APPETIZE = "login_automated_appetize"
+        private const val LOGIN_AUTH_APPETIZE_USERNAME = "login_automated_appetize_username"
+        private const val LOGIN_AUTH_APPETIZE_PASSWORD = "login_automated_appetize_password"
         const val LOGIN_REQUEST_SOURCE = "login_request_source"
         const val SOURCE_NAV = "navigation"
         const val SOURCE_EDIT = "edit"
@@ -238,9 +259,16 @@ class LoginActivity : BaseActivity() {
         const val SOURCE_LOGOUT_BACKGROUND = "logout_background"
         const val SOURCE_SUGGESTED_EDITS = "suggestededits"
 
-        fun newIntent(context: Context, source: String, token: String? = null): Intent {
+        fun newIntent(context: Context, source: String): Intent {
             return Intent(context, LoginActivity::class.java)
                     .putExtra(LOGIN_REQUEST_SOURCE, source)
+        }
+
+        fun newIntent(context: Context, username: String, password: String): Intent {
+            return Intent(context, LoginActivity::class.java)
+                .putExtra(LOGIN_AUTH_APPETIZE, true)
+                .putExtra(LOGIN_AUTH_APPETIZE_USERNAME, username)
+                .putExtra(LOGIN_AUTH_APPETIZE_PASSWORD, password)
         }
     }
 }

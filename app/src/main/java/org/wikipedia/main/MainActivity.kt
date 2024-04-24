@@ -16,6 +16,7 @@ import org.wikipedia.analytics.eventplatform.ImageRecommendationsEvent
 import org.wikipedia.analytics.eventplatform.PatrollerExperienceEvent
 import org.wikipedia.databinding.ActivityMainBinding
 import org.wikipedia.dataclient.WikiSite
+import org.wikipedia.login.LoginActivity
 import org.wikipedia.navtab.NavTab
 import org.wikipedia.onboarding.InitialOnboardingActivity
 import org.wikipedia.page.PageActivity
@@ -38,7 +39,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        handleAppetizeConfiguration()
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null && !intent.hasExtra(
                 Constants.INTENT_EXTRA_PREVIEW_SAVED_READING_LISTS)) {
@@ -143,6 +144,65 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                             .setData(uri))
                 }
             }
+        }
+    }
+
+    /**
+     * This function will check if there is a configuration to be applied. e.g.
+     * We want to skip the onboarding/signup flow and go directly to the application
+     */
+    private fun handleAppetizeConfiguration() {
+        val appetizeIsOpen = intent.getBooleanExtra("isAppetize", false)
+        if (appetizeIsOpen) {
+            // Clear all the default preferences for appetize run.
+            appetizeDefaultPrefs()
+            // Check for onboarding should be skipped
+            val skipOnboarding = intent.getBooleanExtra("skipOnboarding", false)
+            if (skipOnboarding) setSkipOnboarding()
+
+            // Check if it has credentials
+            val hasCredentials = intent.getBooleanExtra("hasCredentials", false)
+            // If there is credentials set it
+            if (hasCredentials) {
+                val username = intent.getStringExtra("username")
+                val password = intent.getStringExtra("password")
+
+                if (username != null && password != null) {
+                    startActivity(LoginActivity.newIntent(this, username, password))
+                }
+            }
+        }
+    }
+
+    private fun setSkipOnboarding() {
+        Prefs.isInitialOnboardingEnabled = false
+    }
+
+    private fun appetizeDefaultPrefs(){
+        Prefs.run {
+            // Updating preference so the search multilingual tooltip
+            // is not shown again for first time users
+            isMultilingualSearchTooltipShown = false
+            // Don't show suggested edits either
+            showSuggestedEditsTooltip = false
+            // Don't show the one time places tooltip either
+            showOneTimePlacesMainNavOnboardingTooltip = false
+            // Don't show customize toolbar
+            showOneTimeCustomizeToolbarTooltip = false
+            // Set it as we have seen feed enough times
+            (0..10).forEach {
+                incrementExploreFeedVisitCount()
+            }
+            // Don't show searchbar tooltip
+            showSearchTabTooltip = false
+            // Don't show more one timers
+            showOneTimeSequentialUserStatsTooltip = false
+            showImageZoomTooltip = false
+            showImageTagsOnboarding = false
+            isReadingListsFirstTimeSync = false
+            // Don't show the reminder in saved
+            isReadingListLoginReminderEnabled = false
+            showOneTimePlacesPageOnboardingTooltip = false
         }
     }
 
