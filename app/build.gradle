@@ -71,6 +71,7 @@ android {
 
     sourceSets {
 
+        appetize { java.srcDirs += 'src/extra/java' }
         prod { java.srcDirs += 'src/extra/java' }
         beta { java.srcDirs += 'src/extra/java' }
         alpha { java.srcDirs += 'src/extra/java' }
@@ -135,6 +136,11 @@ android {
             versionName computeVersionName(defaultConfig.versionCode, customChannel)
             // next line is for injecting a custom channel value into the custom/AndroidManifest.xml
             manifestPlaceholders = [customChannel:getProperty('customChannel').toString()]
+            signingConfig signingConfigs.prod
+        }
+        appetize {
+            // Fixed version for Appetize build
+            versionName "1.2.3"
             signingConfig signingConfigs.prod
         }
     }
@@ -239,6 +245,7 @@ dependencies {
     implementation "androidx.room:room-rxjava3:$roomVersion"
 
     // For language detection during editing
+    appetizeImplementation "com.google.mlkit:language-id:$mlKitVersion"
     prodImplementation "com.google.mlkit:language-id:$mlKitVersion"
     betaImplementation "com.google.mlkit:language-id:$mlKitVersion"
     alphaImplementation "com.google.mlkit:language-id:$mlKitVersion"
@@ -246,6 +253,7 @@ dependencies {
     customImplementation "com.google.mlkit:language-id:$mlKitVersion"
 
     // For receiving push notifications for logged-in users.
+    appetizeImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     prodImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     betaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     alphaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
